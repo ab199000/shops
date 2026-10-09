@@ -1,0 +1,16 @@
+.start{
+    display: flex;
+    width: 800px;
+    height: 800px;
+    background-color: rgb(219, 219, 219);
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 30px;
+}
+
+.btnStr{
+    width: 250px;
+    height: 150px;
+    margin-top: -60px;
+}

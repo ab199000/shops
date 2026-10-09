@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.7.0 <0.9.0;
+
+import "./shops.sol";
+
+contract shops_2 is shops_struct {
+
+    function view_people (address adres) public view returns(people memory){
+        return peoples[adres];
+    }
+
+    function getBook() public view returns(feedback []memory){
+        return book;
+    }
+    function getShops() public view returns(frames []memory){
+        return adr_shops;
+    }
+    
+    function getShop_dan (address adres) public view returns(shop memory){
+        return shops[adres];
+    }
+    function getPeoples() public view returns(frames []memory){
+        return adr_peoples;
+    }
+    function getZaiv() public view returns(zapros []memory){
+        return povishenie;
+    }
+}

@@ -1,0 +1,24 @@
+.addShBlock{
+    display: grid;
+}
+
+.ulShop{
+    border: 3px solid rgb(71, 71, 71);
+    padding: 25px;
+    width: 500px;
+    height: 250px;
+    margin-bottom: 25px;
+    overflow-y: scroll;
+    list-style-type: none;
+}
+
+.btnDel{
+    font-size: 15px;
+    width: 60px;
+    height: 30px;
+}
+
+.polka{
+    display: flex;
+    gap: 50px;
+}

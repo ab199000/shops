@@ -1,0 +1,331 @@
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.7.0 <0.9.0;
+
+contract shops_struct{
+
+    struct people{
+        // string name;
+        bytes32 password;
+        uint role;
+        uint psevdo_role; // 1 - админб 2 - покупатель, 3 - продавец, 4 - магазин
+        bool status_work;
+        string [] history;
+    }
+
+    struct marks{
+        address login;
+        bool mark;
+    }
+
+    struct response_to_a_comment{
+        address owner;
+        string comment;
+        marks [] mark;
+    }
+
+    struct frames{
+        address adres;
+        bool status_work;  // true - работает, не работает - false 
+    }
+
+    struct feedback{
+        address login;
+        uint estimation;
+        string comment;
+        marks [] ocenka;
+        address shop;
+        response_to_a_comment[] ochenki;
+    }
+
+    struct shop{
+        address login;
+        string name_shop;
+        frames [] shopers;
+        string city;
+        bool status_work;
+    }
+    struct zapros{
+        address owner;
+        uint role;
+        address shop;
+        bool deystvie; //true - повысить до продавца, false - понизить до покупателя
+        bool status;
+    }
+
+    mapping(address => people) public peoples;
+    mapping(address => shop) public shops;
+
+    // shop[] public shops_;
+    frames[] public adr_shops;
+    feedback [] public book;
+    zapros[] public povishenie;
+    frames[] public adr_peoples;
+    address[] public admins;
+    uint count_admins = 1;
+
+    constructor(){
+
+        address admin = 0x8c326E6512Cd15ca070f3Dc8993Ada7643649a4F;
+
+        address user1 = 0x404FE28f57321A0574d260079d1468bdE7e1d5CB;
+        address user2 = 0xf5fF51faF179835195137D441B11472efb9875AF;
+
+        peoples[admin].password = keccak256(abi.encodePacked("1"));
+        peoples[admin].role = 1;
+        peoples[admin].psevdo_role = 1;
+        peoples[admin].status_work = false;
+        adr_peoples.push(frames(admin,false));
+
+        // peoples[user1].name = "Mir";
+        peoples[user1].password = keccak256(abi.encodePacked("1"));
+        peoples[user1].role = 3;
+        peoples[user1].psevdo_role = 3;
+        peoples[user1].status_work = true;
+        adr_peoples.push(frames(user1,true));
+
+        // peoples[user2].name = "Mir";
+        peoples[user2].password = keccak256(abi.encodePacked("1"));
+        peoples[user2].role = 3;
+        peoples[user2].psevdo_role = 3;
+        peoples[user2].status_work = true;
+        adr_peoples.push(frames(user2,true));
+
+
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].login = 0x53383EE74D66002EeF19951E6D4CB951D5479867;
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].shopers.push(frames(user1, true));
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].shopers.push(frames(user2, true));
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].name_shop = "Brus";
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].city = "Moscow";
+        shops[0x53383EE74D66002EeF19951E6D4CB951D5479867].status_work = true;
+
+        adr_shops.push(frames(0x53383EE74D66002EeF19951E6D4CB951D5479867,true));
+    }
+
+    
+//Регистрация человека
+    function registration_people(string memory _name, bytes32 _password)public {
+        require(peoples[msg.sender].password == 0x0000000000000000000000000000000000000000000000000000000000000000, "you are registered");
+        // peoples[msg.sender].name = _name;
+        peoples[msg.sender].password = _password;
+        peoples[msg.sender].role = 2;
+        peoples[msg.sender].psevdo_role = 2;
+        peoples[msg.sender].status_work = false;
+        adr_peoples.push(frames(msg.sender,false));
+
+    }
+
+// Авторизация человека
+    function autorization_people(address adres, bytes32 password) public returns(bool){
+        if(peoples[adres].password == password){
+            return true;
+        }
+        return false;
+    }
+
+// Регистрация магазина
+    function registration_shop (address adres, string memory name_shop, string memory city)public returns(bool){
+        require(peoples[msg.sender].psevdo_role == 1 && peoples[msg.sender].role == 1, "You not admin");
+
+        for(uint i = 0; i<adr_shops.length;i++){
+            if(adr_shops[i].adres == adres && adr_shops[i].status_work == true){
+                return false;
+            }
+        }
+        
+
+        shops[adres].login = adres;
+        shops[adres].name_shop = name_shop;
+        shops[adres].city = city;
+        shops[adres].status_work = true;
+        adr_shops.push(frames(adres, true));
+
+        return true;
+    }
+
+    function create_zaivka(uint role,address shop,bool deystvie)public{
+        require(peoples[msg.sender].psevdo_role == 2 || peoples[msg.sender].psevdo_role == 3, "you not buyer/seller");
+        povishenie.push(zapros(msg.sender,role,shop,deystvie,false));
+    }
+
+//Повышение роли на продавца - Админ
+    function changing_roles (uint id_zayavki, bool otvet) public {
+        require(peoples[msg.sender].psevdo_role == 1, "You not admin");
+        require(povishenie[id_zayavki].role == 2 || povishenie[id_zayavki].role == 3, "there is no role");
+
+        if(!otvet){
+            povishenie[id_zayavki].status = true;
+            return;
+        }
+
+        if(peoples[povishenie[id_zayavki].owner].psevdo_role == povishenie[id_zayavki].role){
+            povishenie[id_zayavki].status = true;
+            return;
+        }
+
+        if(povishenie[id_zayavki].deystvie){
+            peoples[povishenie[id_zayavki].owner].psevdo_role = povishenie[id_zayavki].role;
+            peoples[povishenie[id_zayavki].owner].role = povishenie[id_zayavki].role;
+
+            shops[povishenie[id_zayavki].shop].shopers.push(frames(povishenie[id_zayavki].owner,true));
+            povishenie[id_zayavki].status = true;
+            return;
+        }
+
+        for(uint i= 0;i < shops[povishenie[id_zayavki].shop].shopers.length;i++){
+            if(povishenie[id_zayavki].owner != shops[povishenie[id_zayavki].shop].shopers[i].adres){
+                continue;
+            }
+            //в магазине
+            shops[povishenie[id_zayavki].shop].shopers[i].status_work = false;
+            //у человека
+            peoples[shops[povishenie[id_zayavki].shop].shopers[i].adres].status_work = false;
+            peoples[shops[povishenie[id_zayavki].shop].shopers[i].adres].role = 2;
+            peoples[shops[povishenie[id_zayavki].shop].shopers[i].adres].psevdo_role = 2;
+            povishenie[id_zayavki].status = true;
+        }
+        for(uint i= 0;i < adr_peoples.length;i++){
+            if(povishenie[id_zayavki].owner != adr_peoples[i].adres){
+                continue;
+            }
+            adr_peoples[i].status_work = false;
+        }
+        povishenie[id_zayavki].status = true;
+
+    }
+
+//изменение роли
+    function transition_to_a_role (uint role) public {
+        require(role == 3 || role == 2 || role == 3, "there is no role");
+        if(role > 1){
+            if(peoples[msg.sender].psevdo_role == role){
+                peoples[msg.sender].role = role;
+            }
+        }
+        peoples[msg.sender].role = role;
+        
+    }
+
+//Добавление админа
+    function new_admin (address adres) public{
+        require(peoples[msg.sender].psevdo_role == 1 && peoples[msg.sender].role == 1, "You not admin");
+        require(peoples[msg.sender].password != 0x0000000000000000000000000000000000000000000000000000000000000000, "you are registered");
+
+        if(peoples[adres].status_work){
+            for(uint i = 0; i < adr_shops.length;i++){
+                for(uint j = 0; j < shops[adr_shops[i].adres].shopers.length;j++){
+                    if(shops[adr_shops[i].adres].shopers[j].adres == adres){
+                        shops[adr_shops[i].adres].shopers[j].status_work = false;
+                    }
+                }
+            }
+        }
+
+        peoples[adres].psevdo_role = 1;
+        peoples[adres].role = 1;
+        peoples[adres].status_work = false;
+
+        admins.push(adres);
+        count_admins++;
+    }
+
+//Удаление магазина
+    function remove_shop(address adres_shop) public {
+        require(peoples[msg.sender].psevdo_role == 1 && peoples[msg.sender].role == 1, "You not admin");
+        require(shops[adres_shop].status_work == true,"Shop is not working");
+        //смена статуса работы на не рабочий - false
+        for(uint i =0; i < adr_shops.length;i++){
+            if(adr_shops[i].adres != adres_shop){
+                continue;
+            }
+            adr_shops[i].status_work = false;
+        }
+        
+        shops[adres_shop].status_work = false;
+        //Увольнение работников 
+        for(uint i= 0;i < shops[adres_shop].shopers.length;i++){
+            //в магазине
+            shops[adres_shop].shopers[i].status_work = false;
+            //у человека
+            peoples[shops[adres_shop].shopers[i].adres].status_work = false;
+            peoples[shops[adres_shop].shopers[i].adres].role = 2;
+            peoples[shops[adres_shop].shopers[i].adres].psevdo_role = 2;
+        }
+    }
+
+//Создать коментарий
+    function create_entry(uint estimation, string memory comment,address shop)public{
+        require(peoples[msg.sender].role == 2, "you not buyer");
+        require(estimation > 0 && estimation < 11, "not correct estimation");
+        require(shops[shop].status_work == true, "shop is not working");
+        feedback storage comit = book.push();
+
+        comit.login = msg.sender;
+        comit.estimation = estimation;
+        comit.comment = comment;
+        comit.shop = shop;
+        peoples[msg.sender].history.push("create review");
+    }
+
+//Поставить лайк/дизлайк коментарию
+    function like_diz(uint id_rewiev,bool mark) public{
+        require(peoples[msg.sender].psevdo_role ==3, "you not buyer");
+        for(uint i = 0; i < book[id_rewiev].ocenka.length;i++){
+            if(book[id_rewiev].ocenka[i].login == msg.sender && book[id_rewiev].ochenki[i].owner == msg.sender){
+                return;
+            }
+        }
+
+        book[id_rewiev].ocenka.push(marks(msg.sender,mark));
+        if(mark){
+            peoples[msg.sender].history.push("put like");
+            return;
+        }
+        peoples[msg.sender].history.push("setdislike");
+    }
+
+//Написать коментарий к коментарию
+    function commentRewiev(uint id_rewiev, string memory comment) public{
+        require(peoples[msg.sender].role == 2 || peoples[msg.sender].role == 3, "You can not write coment");
+        if(peoples[msg.sender].psevdo_role == 3){
+            for(uint i = 0; i < adr_shops.length;i++){
+                for(uint j = 0; j < shops[adr_shops[i].adres].shopers.length;j++){
+                    if(shops[adr_shops[i].adres].shopers[j].adres == msg.sender && shops[adr_shops[i].adres].shopers[j].status_work == true){
+                        response_to_a_comment storage com = book[id_rewiev].ochenki.push();
+                        com.owner = msg.sender;
+                        com.comment = comment;
+                    }
+                }
+            }
+        }
+        response_to_a_comment storage com = book[id_rewiev].ochenki.push();
+        com.owner = msg.sender;
+        com.comment = comment;
+        peoples[msg.sender].history.push("create coment");
+    }
+
+//Лайк/диз коментарию коментраия
+    // function commentRewievLike(uint id_shop, uint id_rewiev, uint id_comment, bool mark) public{
+    //     require(peoples[msg.sender].psevdo_role ==3, "you not buyer");
+        
+    //     for(uint i = 0; i < book[id_rewiev].ocenka.length;i++){
+    //         if(book[id_rewiev].ocenka[i].login == msg.sender){
+    //             return;
+    //         }
+    //     }
+    //     book[id_rewiev].ochenki[id_comment].mark.push(marks(msg.sender,mark));
+    //     if(mark){
+    //         peoples[msg.sender].history.push("put like");
+    //         return;
+    //     }
+    //     peoples[msg.sender].history.push("set dislike");
+    // }
+
+//Работники магазина
+    function view_people_shop (address adres) public view returns(frames[]memory){
+        return shops[adres].shopers;
+    }
+    
+}
+
+

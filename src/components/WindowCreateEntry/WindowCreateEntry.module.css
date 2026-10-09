@@ -1,0 +1,8 @@
+.createEntr{
+    display: grid;
+    width: 500px;
+}
+
+.btnCreate{
+    width: max-content;
+}
